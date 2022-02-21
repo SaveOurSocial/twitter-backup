@@ -1,5 +1,6 @@
 const Twitter = require('twitter');
 const moment = require('moment');
+require('dotenv').config();
 
 var client = new Twitter({
   consumer_key: process.env.TWITTER_API_KEY,
@@ -71,10 +72,10 @@ async function hours_since_last_post(user) {
 async function find_root_tweet(id) {
   var tweet;
   while (true) {
-      console.log(id);
-      tweet = await twitter.show(id);
-      if (! tweet.in_reply_to_status_id_str) break;
-      id = tweet.in_reply_to_status_id_str;
+    console.log(id);
+    tweet = await twitter.show(id);
+    if (! tweet.in_reply_to_status_id_str) break;
+    id = tweet.in_reply_to_status_id_str;
   }
   return tweet;
 }
@@ -82,23 +83,41 @@ async function find_root_tweet(id) {
 async function get_replies(tweet) {
   var max_id = null;
   while (true) {
-      var raw = await twitter.search({
-    q: `to:${tweet.user.screen_name}`,
-    since_id: tweet.id,
-    result_type: 'recent',
-    count: 100,
-    max_id: max_id
-      });
-      var replies = [];
-      for (var candidate of raw.statuses) {
-    if (candidate.in_reply_to_status_id_str === tweet.id_str) {
+    var raw = await twitter.search({
+      q: `to:${tweet.user.screen_name}`,
+      since_id: tweet.id,
+      result_type: 'recent',
+      count: 100,
+      max_id: max_id
+    });
+    var replies = [];
+    for (var candidate of raw.statuses) {
+      if (candidate.in_reply_to_status_id_str === tweet.id_str) {
           replies.push(candidate);
-    }
       }
-      if (! raw.search_metadata.next_results) break;
-      max_id = raw.search_metadata.next_results.match(/max_id=([0-9]+)/)[1];
+    }
+    if (! raw.search_metadata.next_results) break;
+    max_id = raw.search_metadata.next_results.match(/max_id=([0-9]+)/)[1];
   }
   return replies;
+}
+
+async function* bulk_followers(username) {
+  var cursor = -1;
+  while(true) {
+    var ids = await follower_ids(username, cursor);
+    const pagesize = 100;
+    for (var index = 0; index < ids.ids.length; index += pagesize) {
+      var users = await users_lookup(ids.ids.slice(index, index + pagesize));
+      for (var user of users) {
+        yield user;
+      }
+      // wait 3 seconds (300 request per 15 minutes is 1 per 3 seconds)
+      await new Promise(r => setTimeout(r, 3*1000));
+    }
+    if (! ids.next_cursor) break;
+    cursor = ids.next_cursor;
+  }
 }
 
 module.exports = {
@@ -117,5 +136,6 @@ module.exports = {
   timeline,
   hours_since_last_post,
   find_root_tweet,
-  get_replies
+  get_replies,
+  bulk_followers,
 };
