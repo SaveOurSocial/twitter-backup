@@ -3,139 +3,139 @@ const moment = require('moment');
 require('dotenv').config();
 
 var client = new Twitter({
-  consumer_key: process.env.TWITTER_API_KEY,
-  consumer_secret: process.env.TWITTER_API_SECRET,
-  access_token_key: process.env.TWITTER_ACCESS_TOKEN,
-  access_token_secret: process.env.TWITTER_ACCESS_SECRET
+    consumer_key: process.env.TWITTER_API_KEY,
+    consumer_secret: process.env.TWITTER_API_SECRET,
+    access_token_key: process.env.TWITTER_ACCESS_TOKEN,
+    access_token_secret: process.env.TWITTER_ACCESS_SECRET
 });
 
 async function tweet(status) {
-  return client.post('statuses/update', {status});
+    return client.post('statuses/update', {status});
 }
 
 async function show(id) {
-  return client.get('statuses/show', {id});
+    return client.get('statuses/show', {id});
 }
 
 async function search({q, since_id, result_type, count, max_id}) {
-  return client.get('search/tweets', {q, since_id, result_type, count, max_id});
+    return client.get('search/tweets', {q, since_id, result_type, count, max_id});
 }
 
 async function users_search(q) {
-  return client.get('users/search', { q });
+    return client.get('users/search', { q });
 }
 
 async function favorites() {
-  return client.get('favorites/list', { count: 200 });
+    return client.get('favorites/list', { count: 200 });
 }
 
 async function followers(user, cursor) {
-  return client.get('followers/list', { screen_name: user, count: 200, cursor: cursor });
+    return client.get('followers/list', { screen_name: user, count: 200, cursor: cursor });
 }
 
 async function follower_ids(user, cursor) {
-  return client.get('followers/ids', { screen_name: user, count: 5000, cursor: cursor, stringify_ids: true });
+    return client.get('followers/ids', { screen_name: user, count: 5000, cursor: cursor, stringify_ids: true });
 }
 
 async function users_lookup(user_ids) {
-  return client.get('users/lookup', { user_id: user_ids.join(','), include_entities: true });
+    return client.get('users/lookup', { user_id: user_ids.join(','), include_entities: true });
 }
 
 async function friendship(user) {
-  return client.get('friendships/show', { target_screen_name: user });
+    return client.get('friendships/show', { target_screen_name: user });
 }
 
 async function self_favorites() {
-  var results = await favorites();
-  return results.filter(v => v.user.screen_name == process.env.USERNAME);
+    var results = await favorites();
+    return results.filter(v => v.user.screen_name == process.env.USERNAME);
 }
 
 async function retweet(id) {
-  return client.post('statuses/retweet/' + id, {});
+    return client.post('statuses/retweet/' + id, {});
 }
 
 async function unretweet(id) {
-  return client.post('statuses/unretweet/' + id, {});
+    return client.post('statuses/unretweet/' + id, {});
 }
 
 async function timeline(user, count) {
-  return client.get('statuses/user_timeline', { screen_name: user, count: count || 10, exclude_replies: true, include_rt: false });
+    return client.get('statuses/user_timeline', { screen_name: user, count: count || 10, exclude_replies: true, include_rt: false });
 }
 
 async function hours_since_last_post(user) {
-  var tweets = await timeline(user, 1);
-  if (! tweets.length) return 99999;
-  var created_at = moment(tweets[0].created_at, "ddd MMM DD HH:mm:ss ZZ YYYY");
-  return moment().diff(created_at, 'hours');
+    var tweets = await timeline(user, 1);
+    if (! tweets.length) return 99999;
+    var created_at = moment(tweets[0].created_at, "ddd MMM DD HH:mm:ss ZZ YYYY");
+    return moment().diff(created_at, 'hours');
 }
 
 async function find_root_tweet(id) {
-  var tweet;
-  while (true) {
-    console.log(id);
-    tweet = await twitter.show(id);
-    if (! tweet.in_reply_to_status_id_str) break;
-    id = tweet.in_reply_to_status_id_str;
-  }
-  return tweet;
+    var tweet;
+    while (true) {
+        console.log(id);
+        tweet = await twitter.show(id);
+        if (! tweet.in_reply_to_status_id_str) break;
+        id = tweet.in_reply_to_status_id_str;
+    }
+    return tweet;
 }
 
 async function get_replies(tweet) {
-  var max_id = null;
-  while (true) {
-    var raw = await twitter.search({
-      q: `to:${tweet.user.screen_name}`,
-      since_id: tweet.id,
-      result_type: 'recent',
-      count: 100,
-      max_id: max_id
-    });
-    var replies = [];
-    for (var candidate of raw.statuses) {
-      if (candidate.in_reply_to_status_id_str === tweet.id_str) {
-          replies.push(candidate);
-      }
+    var max_id = null;
+    while (true) {
+        var raw = await twitter.search({
+            q: `to:${tweet.user.screen_name}`,
+            since_id: tweet.id,
+            result_type: 'recent',
+            count: 100,
+            max_id: max_id
+        });
+        var replies = [];
+        for (var candidate of raw.statuses) {
+            if (candidate.in_reply_to_status_id_str === tweet.id_str) {
+                    replies.push(candidate);
+            }
+        }
+        if (! raw.search_metadata.next_results) break;
+        max_id = raw.search_metadata.next_results.match(/max_id=([0-9]+)/)[1];
     }
-    if (! raw.search_metadata.next_results) break;
-    max_id = raw.search_metadata.next_results.match(/max_id=([0-9]+)/)[1];
-  }
-  return replies;
+    return replies;
 }
 
 async function* bulk_followers(username) {
-  var cursor = -1;
-  while(true) {
-    var ids = await follower_ids(username, cursor);
-    const pagesize = 100;
-    for (var index = 0; index < ids.ids.length; index += pagesize) {
-      var users = await users_lookup(ids.ids.slice(index, index + pagesize));
-      for (var user of users) {
-        yield user;
-      }
-      // wait 3 seconds (300 request per 15 minutes is 1 per 3 seconds)
-      await new Promise(r => setTimeout(r, 3*1000));
+    var cursor = -1;
+    while(true) {
+        var ids = await follower_ids(username, cursor);
+        const pagesize = 100;
+        for (var index = 0; index < ids.ids.length; index += pagesize) {
+            var users = await users_lookup(ids.ids.slice(index, index + pagesize));
+            for (var user of users) {
+                yield user;
+            }
+            // wait 3 seconds (300 request per 15 minutes is 1 per 3 seconds)
+            await new Promise(r => setTimeout(r, 3*1000));
+        }
+        if (! ids.next_cursor) break;
+        cursor = ids.next_cursor;
     }
-    if (! ids.next_cursor) break;
-    cursor = ids.next_cursor;
-  }
 }
 
 module.exports = {
-  tweet,
-  show,
-  search,
-  users_search,
-  favorites,
-  followers,
-  follower_ids,
-  users_lookup,
-  friendship,
-  self_favorites,
-  retweet,
-  unretweet,
-  timeline,
-  hours_since_last_post,
-  find_root_tweet,
-  get_replies,
-  bulk_followers,
+    tweet,
+    show,
+    search,
+    users_search,
+    favorites,
+    followers,
+    follower_ids,
+    users_lookup,
+    friendship,
+    self_favorites,
+    retweet,
+    unretweet,
+    timeline,
+    hours_since_last_post,
+    find_root_tweet,
+    get_replies,
+    bulk_followers,
 };
