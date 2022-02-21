@@ -37,7 +37,7 @@ async function follower_ids(user, cursor) {
 }
 
 async function users_lookup(user_ids) {
-  return client.get('users/lookup', { user_id: user_ids.join(',') });
+  return client.get('users/lookup', { user_id: user_ids.join(','), include_entities: true });
 }
 
 async function friendship(user) {

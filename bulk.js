@@ -27,7 +27,7 @@
       }
     }
 
-    await bulk_followers('finereli');
+    await bulk_followers('arvidkahl');
 
     } catch (e) {
       console.error(e);
