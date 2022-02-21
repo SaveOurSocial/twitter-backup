@@ -11,7 +11,7 @@
     }
 
     var total = 0;
-    const filename = `bulk-${username}.txt`;
+    const filename = `${username}-followers.txt`;
     console.log(`writing to ${filename}...`);
     for await (var user of twitter.bulk_followers('finereli')) {
       fs.appendFileSync(filename, JSON.stringify(user) + '\n');
