@@ -4,7 +4,7 @@
         const { Transform } = require('json2csv');
 
         const inputFilename = process.argv[2];
-        const outputFilename = inputFilename.replace(/\..+$/, '') + '.csv';
+        const outputFilename = inputFilename.replace(/\..+?$/, '') + '.csv';
 
         if (! inputFilename) {
             console.log(`usage: node make-csv.js <filename.txt>`);
