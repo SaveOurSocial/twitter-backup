@@ -1,0 +1,18 @@
+module.exports = {
+    TwitterAuth = [
+        {
+            account: 'finereli',
+            name: 'backup-01',
+            consumer_key: '', // API key
+            consumer_secret: '', // API secret
+            bearer_token: '',
+        },
+        {
+            account: 'finereli',
+            name: 'backup-02',
+            consumer_key: '',
+            consumer_secret: '',
+            bearer_token: '',
+        },
+    ]
+}
