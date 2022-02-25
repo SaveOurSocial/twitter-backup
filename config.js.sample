@@ -1,5 +1,5 @@
 module.exports = {
-    TwitterAuth = [
+    TwitterAuth: [
         {
             account: 'finereli',
             name: 'backup-01',

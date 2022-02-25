@@ -1,13 +1,8 @@
 const Twitter = require('twitter');
 const moment = require('moment');
-require('dotenv').config();
+const config = require('./config.js');
 
-var client = new Twitter({
-    consumer_key: process.env.TWITTER_API_KEY,
-    consumer_secret: process.env.TWITTER_API_SECRET,
-    access_token_key: process.env.TWITTER_ACCESS_TOKEN,
-    access_token_secret: process.env.TWITTER_ACCESS_SECRET
-});
+var client = new Twitter(config.TwitterAuth[0]);
 
 async function tweet(status) {
     return client.post('statuses/update', {status});
@@ -103,17 +98,23 @@ async function get_replies(tweet) {
 }
 
 async function* bulk_followers(username) {
+    // use multiple Twitter clients in parallel
+    clients = config.TwitterAuth.map((settings) => new Twitter(settings));
+    var client_index = 0;
     var cursor = -1;
     while(true) {
         var ids = await follower_ids(username, cursor);
         const pagesize = 100;
         for (var index = 0; index < ids.ids.length; index += pagesize) {
-            var users = await users_lookup(ids.ids.slice(index, index + pagesize));
+            var users = await clients[client_index].get('users/lookup', {
+                user_id: ids.ids.slice(index, index + pagesize).join(','),
+                include_entities: true
+            });
             for (var user of users) {
                 yield user;
             }
-            // wait 3 seconds (300 request per 15 minutes is 1 per 3 seconds)
-            await new Promise(r => setTimeout(r, 3*1000));
+            // switch Twitter client to avoid rate limits
+            client_index = (client_index + 1) % clients.length;
         }
         if (! ids.next_cursor) break;
         cursor = ids.next_cursor;
