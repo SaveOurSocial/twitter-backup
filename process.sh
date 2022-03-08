@@ -1,5 +1,5 @@
-#!/bin/sh
-if [ $1 == "" ]; then
+#!/bin/bash
+if [ "$1" == "" ]; then
     echo "usage $0 <username>"
     exit 1
 fi
