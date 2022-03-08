@@ -1,6 +1,7 @@
 (async () => {
     try {
         const fs = require('fs');
+        const moment = require('moment');
         const { Transform } = require('json2csv');
 
         const inputFilename = process.argv[2];
@@ -24,6 +25,13 @@
             );
             // add twitter link
             item.twitter_link = `https://twitter.com/${item.screen_name}`;
+            // add last status date
+            item.last_tweeted = '';
+            if (item.status) {
+                item.last_tweeted = moment(item.status.created_at, 'ddd MMM DD HH:mm:ss +ZZ YYYY').format('YYYY-MM-DD HH:mm:ss');
+            }
+            // rename statuses_count to tweet_count
+            item.tweet_count = item.statuses_count
             return item;
         }
 
@@ -31,7 +39,7 @@
             fs.truncateSync(outputFilename);
         }
 
-        const fields = ['name', 'twitter_link', 'location', 'url', 'followers_count', 'statuses_count', 'description'];
+        const fields = ['name', 'twitter_link', 'location', 'url', 'followers_count', 'tweet_count', 'description', 'last_tweeted'];
         const transforms = [tranform_record];
         const opts = { fields, transforms };
         const transformOpts = { highWaterMark: 16384, encoding: 'utf-8' };
