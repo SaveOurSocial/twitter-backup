@@ -30,8 +30,10 @@
             if (item.status) {
                 item.last_tweeted = moment(item.status.created_at, 'ddd MMM DD HH:mm:ss +ZZ YYYY').format('YYYY-MM-DD HH:mm:ss');
             }
-            // rename statuses_count to tweet_count
-            item.tweet_count = item.statuses_count
+            // rename fields
+            item.tweets = item.statuses_count
+            item.followers = item.followers_count
+            item.following = item.friends_count
             return item;
         }
 
@@ -39,7 +41,7 @@
             fs.truncateSync(outputFilename);
         }
 
-        const fields = ['name', 'twitter_link', 'location', 'url', 'followers_count', 'tweet_count', 'description', 'last_tweeted'];
+        const fields = ['name', 'twitter_link', 'screen_name', 'location', 'url', 'followers', 'following', 'tweets', 'description', 'last_tweeted'];
         const transforms = [tranform_record];
         const opts = { fields, transforms };
         const transformOpts = { highWaterMark: 16384, encoding: 'utf-8' };
