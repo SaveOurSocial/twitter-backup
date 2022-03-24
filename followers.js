@@ -11,7 +11,7 @@
         }
 
         var total = 0;
-        const filename = `${username}-followers.txt`;
+        const filename = `${username}-followers.jsonl`;
         console.log(`writing to ${filename}...`);
         if (fs.existsSync(filename)) {
             fs.truncateSync(filename);
