@@ -1,6 +1,7 @@
 const Twitter = require('twitter');
 const moment = require('moment');
 const config = require('./config.js');
+const limiter = require('limiter');
 
 var client = new Twitter(config.TwitterAuth[0]);
 
@@ -102,14 +103,22 @@ async function get_replies(tweet) {
 }
 
 async function* bulk_followers(username) {
+    // rate limiter (15 requests per 15 minutes)
+    follower_ids_limiter = new limiter.RateLimiter({ tokensPerInterval: 15-1, interval: 15*60*1000 });
     // use multiple Twitter clients in parallel
     clients = config.TwitterAuth.map((settings) => new Twitter(settings));
+    clients.forEach((client) => {
+        // separate rate limiter per Twitter client (300 requests per 15 minutes)
+        client.users_lookup_limiter = new limiter.RateLimiter({ tokensPerInterval: 300-1, interval: 15*60*1000 });
+    });
     var client_index = 0;
     var cursor = -1;
     while(true) {
+        await follower_ids_limiter.removeTokens(1);
         var ids = await follower_ids(username, cursor);
         const pagesize = 100;
         for (var index = 0; index < ids.ids.length; index += pagesize) {
+            await clients[client_index].users_lookup_limiter.removeTokens(1);
             var users = await clients[client_index].get('users/lookup', {
                 user_id: ids.ids.slice(index, index + pagesize).join(','),
                 include_entities: true
@@ -117,7 +126,7 @@ async function* bulk_followers(username) {
             for (var user of users) {
                 yield user;
             }
-            // switch Twitter client to avoid rate limits
+            // switch Twitter client to reduce rate limits
             client_index = (client_index + 1) % clients.length;
         }
         if (! ids.next_cursor) break;
