@@ -32,6 +32,10 @@ async function follower_ids(user, cursor) {
     return client.get('followers/ids', { screen_name: user, count: 5000, cursor: cursor, stringify_ids: true });
 }
 
+async function friend_ids(user, cursor) {
+    return client.get('friends/ids', { screen_name: user, count: 5000, cursor: cursor, stringify_ids: true });
+}
+
 async function users_lookup(user_ids) {
     return client.get('users/lookup', { user_id: user_ids.join(','), include_entities: true });
 }
@@ -121,6 +125,30 @@ async function* bulk_followers(username) {
     }
 }
 
+async function* bulk_friends(username) {
+    // use multiple Twitter clients in parallel
+    clients = config.TwitterAuth.map((settings) => new Twitter(settings));
+    var client_index = 0;
+    var cursor = -1;
+    while(true) {
+        var ids = await friend_ids(username, cursor);
+        const pagesize = 100;
+        for (var index = 0; index < ids.ids.length; index += pagesize) {
+            var users = await clients[client_index].get('users/lookup', {
+                user_id: ids.ids.slice(index, index + pagesize).join(','),
+                include_entities: true
+            });
+            for (var user of users) {
+                yield user;
+            }
+            // switch Twitter client to avoid rate limits
+            client_index = (client_index + 1) % clients.length;
+        }
+        if (! ids.next_cursor) break;
+        cursor = ids.next_cursor;
+    }
+}
+
 module.exports = {
     tweet,
     show,
@@ -129,6 +157,7 @@ module.exports = {
     favorites,
     followers,
     follower_ids,
+    friend_ids,
     users_lookup,
     friendship,
     self_favorites,
@@ -139,4 +168,5 @@ module.exports = {
     find_root_tweet,
     get_replies,
     bulk_followers,
+    bulk_friends,
 };
