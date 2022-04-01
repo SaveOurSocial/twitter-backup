@@ -17,6 +17,11 @@ module.exports = {
     ],
     TwitterV2Auth: {
         bearer_token: '',
+    },
+    SMTP: {
+        'host': '',
+        'port': 587,
+        'user': '',
+        'password': '',
     }
-
 }
