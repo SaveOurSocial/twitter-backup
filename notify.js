@@ -6,8 +6,8 @@
 
     const from = 'Eli Finer<eli@saveoursocial.co>';
     const subject = 'Twitter audience backup';
-    const template = ({count, link}) => `\
-Hey there,
+    const template = ({name, count, link}) => `\
+Hey ${name},
 
 Here's your backup with all ${count} of your followers.
 
@@ -17,7 +17,7 @@ We’re going to store it for you, but you should keep a copy too.
 
 It’s usually a good idea to load it into Google Sheets where you can filter it to find interesting nuggets.
 
-And here's the payment link. It's $10 per 10,000 followers, so just set the quantity to ${Math.round(count / 1000)} for a total of $${Math.round(count / 1000) * 10}.
+And here's the payment link. It's $10 per 10,000 followers, so just set the quantity to ${Math.round(count / 10000)} for a total of $${Math.round(count / 10000) * 10}.
 
 https://buy.stripe.com/4gweYl2OVeBc9skcMP
 
@@ -26,16 +26,17 @@ Eli
 `
 
     try {
+        const name = process.argv[2];
         const email = process.argv[3];
         const count = parseInt(process.argv[4]);
         const link = process.argv[5];
         const force = process.argv[6] == '--force';
-        if (! (count && link)) {
-            console.log(`usage: node notify.js <email> <count> <link> [--force]`);
+        if (! (email && count && link)) {
+            console.log(`usage: node notify.js <name> <email> <count> <link> [--force]`);
             process.exit(1);
         }
 
-        var message = template({count, link});
+        var message = template({name, count, link});
 
         if (force) {
             console.log(`Sending to ${email}...`);
@@ -51,6 +52,7 @@ Eli
             const info = await transporter.sendMail({
                 from: from,
                 replyTo: 'eli.finer@gmail.com',
+                bcc: 'eli.finer+sos@gmail.com',
                 to: email,
                 subject: subject,
                 text: message,
