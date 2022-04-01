@@ -43,7 +43,7 @@
         }
         var user = tranform_record(users[0]);
         for (var field of fields) {
-            console.log(`${field}: ${user[field]}`);
+            console.log(`${field.padEnd(15)} ${user[field]}`);
         }
         // console.log(await twitter.user(username));
     } catch (e) {
