@@ -2,7 +2,7 @@ const Twitter = require('twitter');
 const moment = require('moment');
 const config = require('./config.js');
 const limiter = require('limiter');
-const needle = require("needle");
+const needle = require('needle');
 
 var client = new Twitter(config.TwitterAuth[0]);
 
