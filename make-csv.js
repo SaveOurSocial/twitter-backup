@@ -16,13 +16,15 @@
             // remove newlines in profile description
             item.description = item.description.replace(/[\r\n ]+/g, ' ');
             // replace url with real url
-            if (item.entities.url) {
+            if (item.entities && item.entities.url) {
                 item.url = item.entities.url.urls[0].expanded_url;
             }
             // replace Twitter links in bio with real links
-            item.entities.description.urls.map(
-                (v) => item.description = item.description.replace(v.url, v.display_url)
-            );
+            if (item.entities && item.entities.description && item.entities.description.urls) {
+                item.entities.description.urls.map(
+                    (v) => item.description = item.description.replace(v.url, v.display_url)
+                );
+            }
             // add twitter link
             item.twitter_link = `https://twitter.com/${item.screen_name}`;
             // add last status date

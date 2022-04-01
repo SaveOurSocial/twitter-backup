@@ -14,5 +14,9 @@ module.exports = {
             consumer_secret: '',
             bearer_token: '',
         },
-    ]
+    ],
+    TwitterV2Auth: {
+        bearer_token: '',
+    }
+
 }

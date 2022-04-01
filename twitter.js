@@ -2,6 +2,7 @@ const Twitter = require('twitter');
 const moment = require('moment');
 const config = require('./config.js');
 const limiter = require('limiter');
+const needle = require("needle");
 
 var client = new Twitter(config.TwitterAuth[0]);
 
@@ -39,6 +40,10 @@ async function friend_ids(user, cursor) {
 
 async function users_lookup(user_ids) {
     return client.get('users/lookup', { user_id: user_ids.join(','), include_entities: true });
+}
+
+async function user(screen_name) {
+    return client.get('users/lookup', { screen_name: screen_name, include_entities: true });
 }
 
 async function friendship(user) {
@@ -158,6 +163,35 @@ async function* bulk_friends(username) {
     }
 }
 
+async function* liking_users(tweet_id) {
+    const endpointURL = `https://api.twitter.com/2/tweets/${tweet_id}/liking_users`;
+    const token = config.TwitterV2Auth.bearer_token;
+
+    const params = {
+        'user.fields': 'created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld',
+    };
+
+    const res = await needle('get', endpointURL, params, {
+        headers: {
+            'User-Agent': "twitter-backup",
+            authorization: `Bearer ${token}`
+        },
+    });
+
+    if (res.body) {
+        for (var item of res.body.data) {
+            // compat with v1 results
+            item.followers_count = item.public_metrics.followers_count;
+            item.friends_count = item.public_metrics.following_count;
+            item.statuses_count = item.public_metrics.tweet_count;
+            item.screen_name = item.username;
+            yield item;
+        }
+    } else {
+        throw new Error('Unsuccessful request: ' + res.body);
+    }
+}
+
 module.exports = {
     tweet,
     show,
@@ -168,6 +202,7 @@ module.exports = {
     follower_ids,
     friend_ids,
     users_lookup,
+    user,
     friendship,
     self_favorites,
     retweet,
@@ -178,4 +213,5 @@ module.exports = {
     get_replies,
     bulk_followers,
     bulk_friends,
+    liking_users,
 };
