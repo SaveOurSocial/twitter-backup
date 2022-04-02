@@ -10,7 +10,7 @@ LIMIT=$2
 CSVPATH=${NAME}-${LIMIT}followers.csv
 JSONPATH=${NAME}-${LIMIT}followers.jsonl
 
-node user.js EdLatimore | grep -e screen_name -e followers
+node user.js $NAME | grep -e screen_name -e followers
 node followers.js $NAME $LIMIT
 node make-csv.js $JSONPATH
 
