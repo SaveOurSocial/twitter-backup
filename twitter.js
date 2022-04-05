@@ -108,32 +108,37 @@ async function get_replies(tweet) {
 }
 
 async function* bulk_followers(username) {
-    // rate limiter (15 requests per 15 minutes)
-    follower_ids_limiter = new limiter.RateLimiter({ tokensPerInterval: 15-1, interval: 15*60*1000 });
     // use multiple Twitter clients in parallel
     clients = config.TwitterAuth.map((settings) => new Twitter(settings));
     clients.forEach((client) => {
-        // separate rate limiter per Twitter client (300 requests per 15 minutes)
-        client.users_lookup_limiter = new limiter.RateLimiter({ tokensPerInterval: 300-1, interval: 15*60*1000 });
+        // separate rate limiters per Twitter client
+        client.ids_limiter = new limiter.RateLimiter({ tokensPerInterval: 15-1, interval: 15*60*1000 });
+        client.lookup_limiter = new limiter.RateLimiter({ tokensPerInterval: 300-1, interval: 15*60*1000 });
     });
-    var client_index = 0;
+    var ids_client_index = 0;
+    var lookup_client_index = 0;
     var cursor = -1;
     while(true) {
-        await follower_ids_limiter.removeTokens(1);
-        var ids = await follower_ids(username, cursor);
+        await clients[ids_client_index].ids_limiter.removeTokens(1);
+        var ids = await clients[ids_client_index].get('followers/ids', {
+            screen_name: username,
+            count: 5000,
+            cursor: cursor,
+            stringify_ids: true
+        });
         const pagesize = 100;
         for (var index = 0; index < ids.ids.length; index += pagesize) {
-            await clients[client_index].users_lookup_limiter.removeTokens(1);
-            var users = await clients[client_index].get('users/lookup', {
+            await clients[lookup_client_index].lookup_limiter.removeTokens(1);
+            var users = await clients[lookup_client_index].get('users/lookup', {
                 user_id: ids.ids.slice(index, index + pagesize).join(','),
                 include_entities: true
             });
             for (var user of users) {
                 yield user;
             }
-            // switch Twitter client to reduce rate limits
-            client_index = (client_index + 1) % clients.length;
+            lookup_client_index = (lookup_client_index + 1) % clients.length;
         }
+        ids_client_index = (ids_client_index + 1) % clients.length;
         if (! ids.next_cursor) break;
         cursor = ids.next_cursor;
     }
