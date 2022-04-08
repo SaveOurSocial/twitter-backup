@@ -24,4 +24,4 @@ BACKUP_URL="https://backups.saveoursocial.co/$ID/$CSVPATH"
 echo $BACKUP_URL
 echo
 echo "RUN THIS TO SEND EMAIL"
-echo "node notify.js $USERNAME $EMAIL $COUNT $BACKUP_URL --force"
+echo "node notify.js $NAME $EMAIL $COUNT $BACKUP_URL --force"
