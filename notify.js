@@ -9,7 +9,7 @@
     const template = ({name, count, link}) => `\
 Hey ${name},
 
-Here's your backup with all ${count} of your followers.
+Here's your backup with ${count} followers.
 
 ${link}
 
@@ -17,11 +17,7 @@ We’re going to store it for you, but you should keep a copy too.
 
 It’s usually a good idea to load it into Google Sheets where you can filter it to find interesting nuggets.
 
-And here's the payment link. It's $10 per 10,000 followers, so just set the quantity to ${Math.round(count / 10000)} for a total of $${Math.round(count / 10000) * 10}.
-
-https://buy.stripe.com/4gweYl2OVeBc9skcMP
-
-Thanks,
+Thanks!
 Eli
 `
 
@@ -51,7 +47,7 @@ Eli
             });
             const info = await transporter.sendMail({
                 from: from,
-                replyTo: 'eli.finer@gmail.com',
+                // replyTo: 'eli.finer@gmail.com',
                 bcc: 'eli.finer+sos@gmail.com',
                 to: email,
                 subject: subject,
