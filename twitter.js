@@ -4,7 +4,7 @@ const config = require('./config.js');
 const limiter = require('limiter');
 const needle = require('needle');
 
-var client = new Twitter(config.TwitterAuth[0]);
+var client = new Twitter(config.TwitterMainAuth);
 
 async function tweet(status) {
     return client.post('statuses/update', {status});
@@ -65,6 +65,22 @@ async function unretweet(id) {
 
 async function timeline(user, count) {
     return client.get('statuses/user_timeline', { screen_name: user, count: count || 10, exclude_replies: true, include_rt: false });
+}
+
+async function send_dm(user_id, message) {
+    return client.post('direct_messages/events/new.json', {
+        event: {
+            type: 'message_create',
+            message_create: {
+                target: {
+                    recipient_id: user_id,
+                },
+                message_data: {
+                    text: 'Hello World!'
+                }
+            },
+        }
+    });
 }
 
 async function hours_since_last_post(user) {
@@ -213,6 +229,7 @@ module.exports = {
     retweet,
     unretweet,
     timeline,
+    send_dm,
     hours_since_last_post,
     find_root_tweet,
     get_replies,
