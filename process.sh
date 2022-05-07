@@ -1,17 +1,18 @@
 #!/bin/bash
 if [ "$2" == "" ]; then
-    echo "usage $0 <username> <email>"
+    echo "usage $0 <username> <email> [limit]"
     exit 1
 fi
 
 ID=`uuidgen | md5 | head -c10`
 USERNAME=${1//@/}
 EMAIL=$2
-CSVPATH=$USERNAME-followers.csv
-JSONPATH=$USERNAME-followers.jsonl
+LIMIT=$3
+CSVPATH=$USERNAME-${LIMIT}followers.csv
+JSONPATH=$USERNAME-${LIMIT}followers.jsonl
 
 node user.js $USERNAME | grep -e screen_name -e followers
-node followers.js $USERNAME
+node followers.js $USERNAME $LIMIT
 node make-csv.js $JSONPATH
 
 gzip -f $JSONPATH
