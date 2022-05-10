@@ -4,7 +4,7 @@ const config = require('./config.js');
 const limiter = require('limiter');
 const needle = require('needle');
 
-var client = new Twitter(config.TwitterMainAuth);
+var client = new Twitter(config.TwitterAuth[0]);
 
 async function tweet(status) {
     return client.post('statuses/update', {status});
