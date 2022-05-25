@@ -1,13 +1,12 @@
 #!/bin/bash
-if [ "$2" == "" ]; then
-    echo "usage $0 <username> <email> [limit]"
+if [ "$1" == "" ]; then
+    echo "usage $0 <username> [limit]"
     exit 1
 fi
 
 ID=`uuidgen | md5 | head -c10`
 USERNAME=${1//@/}
-EMAIL=$2
-LIMIT=$3
+LIMIT=$2
 CSVPATH=$USERNAME-${LIMIT}followers.csv
 JSONPATH=$USERNAME-${LIMIT}followers.jsonl
 
@@ -23,6 +22,3 @@ NAME=there
 COUNT=$(wc -l $CSVPATH | awk '{print $1}')
 BACKUP_URL="https://backups.saveoursocial.co/$ID/$CSVPATH"
 echo $BACKUP_URL
-echo
-echo "RUN THIS TO SEND EMAIL"
-echo "node notify.js $NAME $EMAIL $COUNT $BACKUP_URL --force"
